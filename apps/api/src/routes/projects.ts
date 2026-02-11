@@ -29,7 +29,7 @@ projectRoutes.post("/", async (c) => {
     const body = await c.req.json();
     const project = body.repo
       ? await createProjectFromGitHub(body)
-      : createProject(body);
+      : await createProject(body);
     return c.json({ data: project }, 201);
   } catch (e) {
     if (e instanceof ValidationError) {
@@ -57,6 +57,7 @@ projectRoutes.patch("/:id", async (c) => {
 
 projectRoutes.delete("/:id", async (c) => {
   const id = c.req.param("id");
+  const keepWorktree = c.req.query("keepWorktree") === "true";
   try {
     // Stop container if running
     const project = getProject(id);
@@ -64,7 +65,7 @@ projectRoutes.delete("/:id", async (c) => {
       const { stopContainer: stop } = await import("../docker/containers");
       await stop(id);
     }
-    deleteProject(id);
+    await deleteProject(id, keepWorktree);
     return c.json({ data: { ok: true } });
   } catch (e) {
     if (e instanceof NotFoundError) {

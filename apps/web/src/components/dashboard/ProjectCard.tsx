@@ -2,7 +2,8 @@ import { useNavigate } from "react-router-dom";
 import type { Project } from "@dockpit/shared";
 import { useProjectStore } from "../../stores/projectStore";
 import { ContainerStatusBadge } from "./ContainerStatusBadge";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { api } from "../../lib/api";
 
 export function ProjectCard({ project }: { project: Project }) {
   const navigate = useNavigate();
@@ -10,6 +11,29 @@ export function ProjectCard({ project }: { project: Project }) {
   const [actionLoading, setActionLoading] = useState(false);
 
   const isRunning = project.containerStatus === "running";
+  const [previewLines, setPreviewLines] = useState<string[]>([]);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!isRunning) {
+      setPreviewLines([]);
+      return;
+    }
+
+    const fetchPreview = () => {
+      api.containers.terminalPreview(project.id).then(
+        (data) => setPreviewLines(data.lines),
+        () => {}
+      );
+    };
+
+    fetchPreview();
+    intervalRef.current = setInterval(fetchPreview, 5000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isRunning, project.id]);
 
   const handleToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -60,14 +84,22 @@ export function ProjectCard({ project }: { project: Project }) {
         <ContainerStatusBadge status={project.containerStatus} />
       </div>
 
-      {/* Terminal preview placeholder */}
-      <div className="bg-zinc-950 rounded-lg h-24 mb-4 flex items-center justify-center border border-zinc-800/50">
-        {isRunning ? (
-          <div className="text-xs text-zinc-600 font-mono">
-            <span className="text-emerald-500">$</span> _
+      {/* Terminal preview */}
+      <div className="bg-zinc-950 rounded-lg h-24 mb-4 border border-zinc-800/50 overflow-hidden">
+        {isRunning && previewLines.length > 0 ? (
+          <pre className="p-2 text-[10px] leading-tight text-zinc-400 font-mono whitespace-pre overflow-hidden h-full">
+            {previewLines.join("\n")}
+          </pre>
+        ) : isRunning ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-xs text-zinc-600 font-mono">
+              <span className="text-emerald-500">$</span> _
+            </div>
           </div>
         ) : (
-          <span className="text-xs text-zinc-700">Container stopped</span>
+          <div className="flex items-center justify-center h-full">
+            <span className="text-xs text-zinc-700">Container stopped</span>
+          </div>
         )}
       </div>
 

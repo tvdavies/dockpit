@@ -16,6 +16,7 @@ export function ProjectView() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [showGit, setShowGit] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const { updateProject } = useProjectStore();
 
   useContainerStatus();
@@ -57,9 +58,11 @@ export function ProjectView() {
   const isRunning = project.containerStatus === "running";
 
   return (
-    <div className="h-screen bg-zinc-950 flex flex-col">
+    <div className="h-screen bg-zinc-950 flex flex-col overflow-hidden">
       <ProjectToolbar
         project={project}
+        showPreview={showPreview}
+        onTogglePreview={() => setShowPreview(!showPreview)}
         showGit={showGit}
         onToggleGit={() => setShowGit(!showGit)}
       />
@@ -69,7 +72,7 @@ export function ProjectView() {
           <Panel defaultSize={showGit ? 70 : 100} minSize={30}>
             <PanelGroup direction="horizontal">
               {/* Terminal */}
-              <Panel defaultSize={60} minSize={30}>
+              <Panel defaultSize={showPreview ? 60 : 100} minSize={30}>
                 <TerminalPane
                   projectId={project.id}
                   sessionId={sessionId}
@@ -77,12 +80,16 @@ export function ProjectView() {
                 />
               </Panel>
 
-              <PanelResizeHandle className="w-1 bg-zinc-800 hover:bg-blue-500 transition-colors" />
+              {showPreview && (
+                <>
+                  <PanelResizeHandle className="w-1 bg-zinc-800 hover:bg-blue-500 transition-colors" />
 
-              {/* Web Preview */}
-              <Panel defaultSize={40} minSize={20}>
-                <WebPreviewPane project={project} />
-              </Panel>
+                  {/* Web Preview */}
+                  <Panel defaultSize={40} minSize={20}>
+                    <WebPreviewPane project={project} />
+                  </Panel>
+                </>
+              )}
             </PanelGroup>
           </Panel>
 

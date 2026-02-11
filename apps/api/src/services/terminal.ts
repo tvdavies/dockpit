@@ -109,7 +109,7 @@ export async function createTerminalSession(
     AttachStdout: true,
     AttachStderr: true,
     Tty: true,
-    Env: ["TERM=xterm-256color"],
+    Env: ["TERM=xterm-256color", "SHELL=/usr/bin/fish"],
   });
 
   // Use raw socket instead of dockerode's exec.start() which hangs under Bun

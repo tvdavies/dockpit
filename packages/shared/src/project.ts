@@ -6,13 +6,16 @@ export interface Project {
   containerStatus: string;
   previewPort: number | null;
   githubRepo: string | null;
+  sourceRepo: string | null;
+  worktreeBranch: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateProjectInput {
   name: string;
-  directory: string;
+  sourceRepo: string;
+  branch?: string;
 }
 
 export interface UpdateProjectInput {
@@ -23,5 +26,5 @@ export interface UpdateProjectInput {
 export interface CreateProjectFromGitHubInput {
   name: string;
   repo: string;
-  directory?: string;
+  branch?: string;
 }

@@ -5,6 +5,7 @@ import {
   stopContainer,
   restartContainer,
   getContainerLogs,
+  getTerminalPreview,
 } from "../docker/containers";
 import { destroyProjectSessions } from "../services/terminal";
 
@@ -76,5 +77,21 @@ containerRoutes.get("/:id/logs", async (c) => {
     return c.json({ data: { lines: logLines } });
   } catch (e: any) {
     return c.json({ error: e.message || "Failed to get logs" }, 500);
+  }
+});
+
+containerRoutes.get("/:id/terminal-preview", async (c) => {
+  const id = c.req.param("id");
+  const project = getProject(id);
+  if (!project) return c.json({ error: "Project not found" }, 404);
+  if (!project.containerId) {
+    return c.json({ data: { lines: [] } });
+  }
+
+  try {
+    const lines = await getTerminalPreview(project.containerId);
+    return c.json({ data: { lines } });
+  } catch (e: any) {
+    return c.json({ error: e.message || "Failed to get terminal preview" }, 500);
   }
 });

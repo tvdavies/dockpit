@@ -46,17 +46,20 @@ function handleDockerEvent(event: any): void {
   const status = mapEventToStatus(event.Action);
   if (!status) return;
 
-  // Update database
+  // Update database — only if the event matches the current container
+  // (prevents stale container events from overwriting a new container's state)
   const db = getDb();
-  db.run(
-    `UPDATE projects SET container_status = ?, updated_at = datetime('now') WHERE id = ?`,
-    [status, projectId]
-  );
+  const eventContainerId = event.Actor?.ID || "";
 
   if (event.Action === "destroy") {
     db.run(
-      `UPDATE projects SET container_id = NULL, updated_at = datetime('now') WHERE id = ?`,
-      [projectId]
+      `UPDATE projects SET container_id = NULL, container_status = ?, updated_at = datetime('now') WHERE id = ? AND container_id = ?`,
+      [status, projectId, eventContainerId]
+    );
+  } else {
+    db.run(
+      `UPDATE projects SET container_status = ?, updated_at = datetime('now') WHERE id = ? AND (container_id = ? OR container_id IS NULL)`,
+      [status, projectId, eventContainerId]
     );
   }
 

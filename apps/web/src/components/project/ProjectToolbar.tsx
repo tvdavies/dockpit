@@ -6,11 +6,13 @@ import { useState } from "react";
 
 interface Props {
   project: Project;
+  showPreview: boolean;
+  onTogglePreview: () => void;
   showGit: boolean;
   onToggleGit: () => void;
 }
 
-export function ProjectToolbar({ project, showGit, onToggleGit }: Props) {
+export function ProjectToolbar({ project, showPreview, onTogglePreview, showGit, onToggleGit }: Props) {
   const navigate = useNavigate();
   const { startContainer, stopContainer, restartContainer } = useProjectStore();
   const [actionLoading, setActionLoading] = useState(false);
@@ -81,6 +83,18 @@ export function ProjectToolbar({ project, showGit, onToggleGit }: Props) {
           </>
         )}
       </div>
+
+      {/* Preview toggle */}
+      <button
+        onClick={onTogglePreview}
+        className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
+          showPreview
+            ? "bg-blue-500/20 text-blue-400"
+            : "bg-zinc-800 text-zinc-400 hover:text-zinc-300"
+        }`}
+      >
+        Preview
+      </button>
 
       {/* Git toggle */}
       <button

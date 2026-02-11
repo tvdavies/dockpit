@@ -10,7 +10,7 @@ interface ProjectStore {
   fetchProjects: () => Promise<void>;
   createProject: (input: CreateProjectInput) => Promise<Project>;
   createProjectFromGitHub: (input: CreateProjectFromGitHubInput) => Promise<Project>;
-  deleteProject: (id: string) => Promise<void>;
+  deleteProject: (id: string, keepWorktree?: boolean) => Promise<void>;
   startContainer: (id: string) => Promise<void>;
   stopContainer: (id: string) => Promise<void>;
   restartContainer: (id: string) => Promise<void>;
@@ -45,8 +45,8 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     return project;
   },
 
-  deleteProject: async (id) => {
-    await api.projects.delete(id);
+  deleteProject: async (id, keepWorktree) => {
+    await api.projects.delete(id, keepWorktree);
     set((s) => ({ projects: s.projects.filter((p) => p.id !== id) }));
   },
 

@@ -34,7 +34,7 @@ export function CreateProjectDialog({ onClose }: Props) {
                 : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
-            Local Directory
+            Local Repo
           </button>
           <button
             onClick={() => setTab("github")}
@@ -60,21 +60,26 @@ export function CreateProjectDialog({ onClose }: Props) {
 
 function LocalTab({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
-  const [directory, setDirectory] = useState("");
+  const [sourceRepo, setSourceRepo] = useState("");
+  const [branch, setBranch] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const createProject = useProjectStore((s) => s.createProject);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !directory.trim()) {
-      setError("Both fields are required");
+    if (!name.trim() || !sourceRepo.trim()) {
+      setError("Name and source repo are required");
       return;
     }
     setLoading(true);
     setError("");
     try {
-      await createProject({ name: name.trim(), directory: directory.trim() });
+      await createProject({
+        name: name.trim(),
+        sourceRepo: sourceRepo.trim(),
+        branch: branch.trim() || undefined,
+      });
       onClose();
     } catch (err: any) {
       setError(err.message);
@@ -101,17 +106,33 @@ function LocalTab({ onClose }: { onClose: () => void }) {
 
       <div>
         <label className="block text-sm text-zinc-400 mb-1.5">
-          Directory Path
+          Source Git Repository
         </label>
         <input
           type="text"
-          value={directory}
-          onChange={(e) => setDirectory(e.target.value)}
-          placeholder="/home/user/projects/my-app"
+          value={sourceRepo}
+          onChange={(e) => setSourceRepo(e.target.value)}
+          placeholder="~/dev/my-app"
           className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 text-sm font-mono"
         />
         <p className="text-xs text-zinc-600 mt-1">
-          This directory will be bind-mounted into the container at /workspace
+          Path to a local git repo. A worktree will be created from it.
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm text-zinc-400 mb-1.5">
+          Branch Name
+        </label>
+        <input
+          type="text"
+          value={branch}
+          onChange={(e) => setBranch(e.target.value)}
+          placeholder={name ? `dockpit/${name}` : "dockpit/{project-name}"}
+          className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 text-sm font-mono"
+        />
+        <p className="text-xs text-zinc-600 mt-1">
+          Optional. Defaults to dockpit/{"{project-name}"}
         </p>
       </div>
 
@@ -150,7 +171,7 @@ function GitHubTab({ onClose }: { onClose: () => void }) {
   const [reposLoading, setReposLoading] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
   const [name, setName] = useState("");
-  const [directory, setDirectory] = useState("");
+  const [branch, setBranch] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -197,7 +218,6 @@ function GitHubTab({ onClose }: { onClose: () => void }) {
   const handleSelectRepo = (repo: GitHubRepo) => {
     setSelectedRepo(repo);
     setName(repo.name);
-    setDirectory(`~/dev/${repo.fullName}`);
     setError("");
   };
 
@@ -213,7 +233,7 @@ function GitHubTab({ onClose }: { onClose: () => void }) {
       await createProjectFromGitHub({
         name: name.trim(),
         repo: selectedRepo.fullName,
-        directory: directory.trim() || undefined,
+        branch: branch.trim() || undefined,
       });
       onClose();
     } catch (err: any) {
@@ -322,7 +342,7 @@ function GitHubTab({ onClose }: { onClose: () => void }) {
         )}
       </div>
 
-      {/* Name and directory fields (shown after selection) */}
+      {/* Name and branch fields (shown after selection) */}
       {selectedRepo && (
         <>
           <div>
@@ -339,16 +359,17 @@ function GitHubTab({ onClose }: { onClose: () => void }) {
 
           <div>
             <label className="block text-sm text-zinc-400 mb-1.5">
-              Clone Directory
+              Branch Name
             </label>
             <input
               type="text"
-              value={directory}
-              onChange={(e) => setDirectory(e.target.value)}
+              value={branch}
+              onChange={(e) => setBranch(e.target.value)}
+              placeholder={name ? `dockpit/${name}` : "dockpit/{project-name}"}
               className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 text-sm font-mono"
             />
             <p className="text-xs text-zinc-600 mt-1">
-              Leave as default or customize the clone destination
+              Optional. Defaults to dockpit/{"{project-name}"}
             </p>
           </div>
         </>
@@ -373,7 +394,7 @@ function GitHubTab({ onClose }: { onClose: () => void }) {
           disabled={loading || !selectedRepo}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
         >
-          {loading ? "Cloning..." : "Create Project"}
+          {loading ? "Creating..." : "Create Project"}
         </button>
       </div>
     </form>

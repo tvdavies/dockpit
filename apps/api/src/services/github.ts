@@ -1,5 +1,5 @@
 import { homedir } from "os";
-import { join, basename } from "path";
+import { join } from "path";
 import { existsSync } from "fs";
 import type { GitHubRepo, GitHubAuthStatusResponse } from "@dockpit/shared";
 
@@ -70,13 +70,9 @@ export async function listGhRepos(opts?: { query?: string; limit?: number }): Pr
   return { repos, hasMore };
 }
 
-function expandHome(p: string): string {
-  return p.startsWith("~/") ? join(homedir(), p.slice(2)) : p;
-}
-
-export async function cloneGhRepo(repo: string, targetDir?: string): Promise<string> {
-  // Default to ~/dev/<owner>/<name>, expand ~ to absolute path
-  const dir = targetDir ? expandHome(targetDir) : join(homedir(), "dev", repo);
+export async function cloneGhRepo(repo: string): Promise<string> {
+  // Always clone to ~/dev/{repo}
+  const dir = join(homedir(), "dev", repo);
 
   // Skip clone if directory already exists (already cloned)
   if (existsSync(dir)) {

@@ -38,8 +38,8 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify(input),
       }),
-    delete: (id: string) =>
-      request<{ ok: boolean }>(`/projects/${id}`, { method: "DELETE" }),
+    delete: (id: string, keepWorktree?: boolean) =>
+      request<{ ok: boolean }>(`/projects/${id}${keepWorktree ? "?keepWorktree=true" : ""}`, { method: "DELETE" }),
     createFromGitHub: (input: CreateProjectFromGitHubInput) =>
       request<Project>("/projects", {
         method: "POST",
@@ -58,6 +58,8 @@ export const api = {
       request<ContainerLogsResponse["data"]>(
         `/projects/${id}/logs?lines=${lines}`
       ),
+    terminalPreview: (id: string) =>
+      request<{ lines: string[] }>(`/projects/${id}/terminal-preview`),
   },
 
   github: {

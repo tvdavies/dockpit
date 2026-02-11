@@ -1,6 +1,7 @@
 import type Docker from "dockerode";
 import { getDocker, NETWORK_NAME } from "./client";
 import { getDb } from "../db/schema";
+import { homedir } from "os";
 import type { ContainerInfo, ContainerStatus } from "@dockpit/shared";
 
 const IMAGE_NAME = "dockpit-devenv:latest";
@@ -33,6 +34,15 @@ export async function createAndStartContainer(
   const docker = getDocker();
   await ensureImage();
 
+  // Remove any stale container with the same name
+  const containerName = `dockpit-${projectName.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
+  try {
+    const stale = docker.getContainer(containerName);
+    await stale.remove({ force: true });
+  } catch {
+    // No stale container
+  }
+
   const container = await docker.createContainer({
     Image: IMAGE_NAME,
     name: `dockpit-${projectName.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`,
@@ -43,9 +53,15 @@ export async function createAndStartContainer(
     },
     Tty: true,
     OpenStdin: true,
-    Cmd: ["/bin/bash", "-c", "sleep infinity"],
+    Cmd: ["sleep", "infinity"],
     HostConfig: {
-      Binds: [`${directory}:/workspace:rw`],
+      Binds: [
+        `${directory}:/workspace:rw`,
+        `${homedir()}/.config/fish/:/root/.config/fish/:rw`,
+        `${homedir()}/.config/gh/:/root/.config/gh/:rw`,
+        `${homedir()}/.claude/:/root/.claude/:rw`,
+        `${homedir()}/.tmux.conf:/root/.tmux.conf:rw`,
+      ],
       NetworkMode: NETWORK_NAME,
     },
     WorkingDir: "/workspace",
@@ -145,6 +161,39 @@ export async function getContainerLogs(
     .toString()
     .split("\n")
     .filter((l: string) => l.length > 0);
+}
+
+export async function getTerminalPreview(
+  containerId: string,
+  lines: number = 5
+): Promise<string[]> {
+  const docker = getDocker();
+  const container = docker.getContainer(containerId);
+
+  try {
+    const exec = await container.exec({
+      Cmd: ["tmux", "capture-pane", "-t", "main", "-p", "-S", `-${lines}`],
+      AttachStdout: true,
+      AttachStderr: true,
+    });
+
+    const stream = await exec.start({ Detach: false });
+    const output = await new Promise<string>((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+      stream.on("end", () => resolve(Buffer.concat(chunks).toString()));
+      stream.on("error", reject);
+    });
+
+    // Split and trim trailing empty lines
+    const result = output.split("\n");
+    while (result.length > 0 && result[result.length - 1].trim() === "") {
+      result.pop();
+    }
+    return result;
+  } catch {
+    return [];
+  }
 }
 
 export { IMAGE_NAME };
