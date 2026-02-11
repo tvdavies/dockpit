@@ -1,0 +1,19 @@
+{
+  "name": "@dockpit/api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "dockerode": "^4.0.5",
+    "@dockpit/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.34",
+    "typescript": "^5.7.0"
+  }
+}
