@@ -21,7 +21,7 @@ export function TerminalPane({ projectId, sessionId, isRunning }: Props) {
   }
 
   return (
-    <div className="h-full bg-zinc-950 p-1">
+    <div className="h-full bg-zinc-950 p-1 overflow-hidden">
       <XTerminal
         projectId={projectId}
         sessionId={sessionId}

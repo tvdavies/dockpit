@@ -273,15 +273,18 @@ function handleBinaryFrame(data: ArrayBuffer): void {
 // --- Project focus (from browser) ---
 
 function handleProjectFocus(projectId: string | null): void {
-  if (projectId === currentProjectId) return;
+  const changed = projectId !== currentProjectId;
   currentProjectId = projectId;
 
   if (!projectId) return;
 
-  // Optimistically open tunnels from cache
+  // Optimistically open tunnels from cache (on focus or re-focus)
   const cachedPorts = cache[projectId];
   if (cachedPorts && cachedPorts.length > 0) {
-    console.log(`Optimistic tunnels for project: ${cachedPorts.join(", ")}`);
+    // Only log on actual project change
+    if (changed) {
+      console.log(`Optimistic tunnels for project: ${cachedPorts.join(", ")}`);
+    }
     syncTunnels(cachedPorts);
   }
 }

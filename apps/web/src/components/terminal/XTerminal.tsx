@@ -26,7 +26,6 @@ export function XTerminal({ projectId, sessionId, enabled = true }: Props) {
     <div
       ref={containerRef}
       className="w-full h-full"
-      style={{ minHeight: 200 }}
     />
   );
 }

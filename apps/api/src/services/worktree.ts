@@ -1,11 +1,11 @@
 import { homedir } from "os";
 import { join } from "path";
-import { mkdirSync } from "fs";
+import { mkdirSync, rmSync, existsSync, copyFileSync, readdirSync } from "fs";
 
 const WORKTREE_BASE = join(homedir(), ".dockpit", "worktrees");
 
-export function getWorktreePath(projectName: string): string {
-  return join(WORKTREE_BASE, projectName);
+export function getWorktreePath(workspaceId: string): string {
+  return join(WORKTREE_BASE, workspaceId);
 }
 
 async function exec(args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }> {
@@ -20,11 +20,21 @@ async function exec(args: string[]): Promise<{ stdout: string; stderr: string; e
 
 export async function createWorktree(
   sourceRepo: string,
-  projectName: string,
+  workspaceId: string,
   branch: string
 ): Promise<string> {
   mkdirSync(WORKTREE_BASE, { recursive: true });
-  const wtPath = getWorktreePath(projectName);
+  const wtPath = getWorktreePath(workspaceId);
+
+  // Clean up stale worktree directory from a previously deleted project
+  if (existsSync(wtPath)) {
+    // Prune stale worktree entries in git first
+    await exec(["git", "-C", sourceRepo, "worktree", "prune"]);
+    // Remove the leftover directory if it still exists
+    if (existsSync(wtPath)) {
+      rmSync(wtPath, { recursive: true, force: true });
+    }
+  }
 
   // Try creating with a new branch first
   const { exitCode, stderr } = await exec([
@@ -44,6 +54,15 @@ export async function createWorktree(
       throw new Error(`Failed to create worktree: ${stderr}`);
     }
   }
+
+  // Copy .env* files from source repo (they're gitignored so worktree won't have them)
+  try {
+    for (const entry of readdirSync(sourceRepo)) {
+      if (entry.startsWith(".env")) {
+        copyFileSync(join(sourceRepo, entry), join(wtPath, entry));
+      }
+    }
+  } catch {}
 
   return wtPath;
 }

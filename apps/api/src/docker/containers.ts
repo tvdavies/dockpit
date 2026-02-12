@@ -46,15 +46,18 @@ export async function createAndStartContainer(
 
   const container = await docker.createContainer({
     Image: IMAGE_NAME,
-    name: `dockpit-${projectName.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`,
+    name: containerName,
     Labels: {
       "dockpit.managed": "true",
       "dockpit.project.id": projectId,
       "dockpit.project.name": projectName,
     },
+    Env: [
+      `DOCKPIT_CONTAINER=${containerName}`,
+    ],
     Tty: true,
     OpenStdin: true,
-    Cmd: ["sh", "-c", "sudo chown -R dev:dev /workspace && exec sleep infinity"],
+    Cmd: ["sh", "-c", "sudo chown -R dev:dev /workspace && sudo sh -c 'dockerd >/tmp/dockerd.log 2>&1' & while ! docker info >/dev/null 2>&1; do sleep 0.5; done && sudo chmod 666 /var/run/docker.sock && exec sleep infinity"],
     HostConfig: {
       Binds: [
         `${directory}:/workspace:rw`,
@@ -63,9 +66,11 @@ export async function createAndStartContainer(
         `${homedir()}/.claude/:/home/dev/.claude/:rw`,
         `${homedir()}/.claude.json:/home/dev/.claude.json:rw`,
         `${homedir()}/.tmux.conf:/home/dev/.tmux.conf:rw`,
-        `/var/run/docker.sock:/var/run/docker.sock:rw`,
+        `${containerName}-docker:/var/lib/docker:rw`,
       ],
+      Privileged: true,
       NetworkMode: NETWORK_NAME,
+      ExtraHosts: ["host.docker.internal:host-gateway"],
     },
     WorkingDir: "/workspace",
   });

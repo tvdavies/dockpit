@@ -1,8 +1,9 @@
 import { getDb } from "../db/schema";
 import type { Project, CreateProjectInput, UpdateProjectInput, CreateProjectFromGitHubInput } from "@dockpit/shared";
+import { generateWorkspaceId } from "@dockpit/shared";
 import { existsSync } from "fs";
 import { homedir } from "os";
-import { join } from "path";
+import { join, basename } from "path";
 import { cloneGhRepo } from "./github";
 import { createWorktree, removeWorktree } from "./worktree";
 
@@ -35,21 +36,15 @@ export async function createProject(input: CreateProjectInput): Promise<Project>
     throw new ValidationError(`Not a git repository: ${input.sourceRepo}`);
   }
 
-  // Validate name uniqueness
-  const existing = db
-    .query("SELECT id FROM projects WHERE name = ?")
-    .get(input.name);
-  if (existing) {
-    throw new ValidationError(`Project name already exists: ${input.name}`);
-  }
-
-  const branch = input.branch || `dockpit/${input.name}`;
-  const worktreePath = await createWorktree(sourceRepo, input.name, branch);
+  const baseName = basename(sourceRepo);
+  const workspaceId = input.workspaceId || generateWorkspaceId(baseName);
+  const branch = input.branch || `dockpit/${workspaceId}`;
+  const worktreePath = await createWorktree(sourceRepo, workspaceId, branch);
 
   const id = crypto.randomUUID();
   db.run(
     `INSERT INTO projects (id, name, directory, source_repo, worktree_branch) VALUES (?, ?, ?, ?, ?)`,
-    [id, input.name, worktreePath, sourceRepo, branch]
+    [id, workspaceId, worktreePath, sourceRepo, branch]
   );
 
   return getProject(id)!;
@@ -58,25 +53,19 @@ export async function createProject(input: CreateProjectInput): Promise<Project>
 export async function createProjectFromGitHub(input: CreateProjectFromGitHubInput): Promise<Project> {
   const db = getDb();
 
-  // Validate name uniqueness
-  const existing = db
-    .query("SELECT id FROM projects WHERE name = ?")
-    .get(input.name);
-  if (existing) {
-    throw new ValidationError(`Project name already exists: ${input.name}`);
-  }
-
   // Clone the repo (always to ~/dev/{repo})
   const clonedDir = await cloneGhRepo(input.repo);
 
-  // Create worktree from the cloned repo
-  const branch = input.branch || `dockpit/${input.name}`;
-  const worktreePath = await createWorktree(clonedDir, input.name, branch);
+  // Extract repo name from "owner/repo"
+  const repoName = input.repo.split("/").pop()!;
+  const workspaceId = input.workspaceId || generateWorkspaceId(repoName);
+  const branch = input.branch || `dockpit/${workspaceId}`;
+  const worktreePath = await createWorktree(clonedDir, workspaceId, branch);
 
   const id = crypto.randomUUID();
   db.run(
     `INSERT INTO projects (id, name, directory, github_repo, source_repo, worktree_branch) VALUES (?, ?, ?, ?, ?, ?)`,
-    [id, input.name, worktreePath, input.repo, clonedDir, branch]
+    [id, workspaceId, worktreePath, input.repo, clonedDir, branch]
   );
 
   return getProject(id)!;

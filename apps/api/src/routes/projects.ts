@@ -10,6 +10,7 @@ import {
   NotFoundError,
 } from "../services/project";
 import { stopContainer, destroyProjectSessions } from "./helpers";
+import { createAndStartContainer } from "../docker/containers";
 
 export const projectRoutes = new Hono();
 
@@ -30,7 +31,9 @@ projectRoutes.post("/", async (c) => {
     const project = body.repo
       ? await createProjectFromGitHub(body)
       : await createProject(body);
-    return c.json({ data: project }, 201);
+    // Auto-start the container
+    await createAndStartContainer(project.id, project.name, project.directory);
+    return c.json({ data: getProject(project.id)! }, 201);
   } catch (e) {
     if (e instanceof ValidationError) {
       return c.json({ error: e.message }, 400);

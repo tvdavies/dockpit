@@ -2,7 +2,8 @@ FROM archlinux:latest
 
 RUN pacman -Syu --noconfirm && pacman -S --noconfirm \
     fish tmux git curl vim nodejs npm unzip \
-    procps-ng iproute2 github-cli starship openssh sudo docker \
+    procps-ng iproute2 github-cli starship openssh sudo docker docker-compose \
+    python openbsd-netcat \
     && pacman -Scc --noconfirm
 
 # Create non-root user

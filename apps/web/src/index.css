@@ -3,9 +3,19 @@
 
 @plugin "tailwindcss-animate";
 
+.scrollbar-none,
+.xterm .xterm-viewport {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar,
+.xterm .xterm-viewport::-webkit-scrollbar {
+  display: none;
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;
+  overflow: hidden;
 }
 
 @theme inline {

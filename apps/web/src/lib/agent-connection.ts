@@ -11,6 +11,7 @@ interface AgentState {
 let state: AgentState = { connected: false, ports: [] };
 let ws: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let lastFocusMessage: string | null = null;
 
 const listeners = new Set<() => void>();
 
@@ -31,6 +32,10 @@ function connectAgent() {
 
   socket.onopen = () => {
     setState({ ...state, connected: true });
+    // Re-send last project focus on reconnect so agent reopens tunnels
+    if (lastFocusMessage) {
+      socket.send(lastFocusMessage);
+    }
   };
 
   socket.onmessage = (event) => {
@@ -63,6 +68,14 @@ export function subscribeAgent(listener: () => void): () => void {
 }
 
 export function sendToAgent(data: string): void {
+  // Track project:focus messages so we can re-send on reconnect
+  try {
+    const msg = JSON.parse(data);
+    if (msg.type === "project:focus") {
+      lastFocusMessage = data;
+    }
+  } catch {}
+
   if (ws?.readyState === WebSocket.OPEN) {
     ws.send(data);
   }

@@ -1,4 +1,5 @@
 export type { Project, CreateProjectInput, UpdateProjectInput, CreateProjectFromGitHubInput } from "./project";
+export { generateWorkspaceId } from "./project";
 export type {
   ContainerStatus,
   ContainerInfo,

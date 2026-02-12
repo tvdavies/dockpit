@@ -40,7 +40,11 @@ interface TunnelTcpCloseMsg {
   connectionId: number;
 }
 
-type AgentMessage = TunnelListeningMsg | TunnelErrorMsg | TunnelTcpOpenMsg | TunnelTcpCloseMsg;
+interface PingMsg {
+  type: "ping";
+}
+
+type AgentMessage = TunnelListeningMsg | TunnelErrorMsg | TunnelTcpOpenMsg | TunnelTcpCloseMsg | PingMsg;
 
 interface ProjectTunnelConfig {
   ports?: number[];
@@ -73,8 +77,11 @@ export function clearAgentConnection(): void {
 }
 
 export function setFocusedProject(projectId: string | null): void {
-  // Skip teardown/rebuild if re-focusing the same project
-  if (projectId && projectId === focusedProjectId) return;
+  // Same project — just re-send current ports to keep agent in sync
+  if (projectId && projectId === focusedProjectId) {
+    sendPortsToAgent(activePorts);
+    return;
+  }
 
   // Stop watching old project
   stopWatching();
@@ -232,6 +239,13 @@ export function handleAgentMessage(data: string): void {
   }
 
   switch (msg.type) {
+    case "ping":
+      // Respond with pong and re-send current ports to keep agent in sync
+      if (agentWs) {
+        try { agentWs.send(JSON.stringify({ type: "pong" })); } catch {}
+      }
+      sendPortsToAgent(activePorts);
+      break;
     case "tunnel:listening":
       handleTunnelListening(msg);
       break;

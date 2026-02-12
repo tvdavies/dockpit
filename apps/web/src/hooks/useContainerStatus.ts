@@ -44,6 +44,7 @@ export function useContainerStatus(projectId?: string) {
   });
 
   // Send project focus to server when projectId changes or ws connects
+  // Also re-assert every 30s so the server re-sends ports to the agent
   useEffect(() => {
     if (!connected) return;
 
@@ -52,14 +53,19 @@ export function useContainerStatus(projectId?: string) {
       return;
     }
 
-    send(JSON.stringify({ type: "project:focus", projectId }));
+    const focusMsg = JSON.stringify({ type: "project:focus", projectId });
+    send(focusMsg);
+
+    const interval = setInterval(() => send(focusMsg), 30_000);
 
     return () => {
+      clearInterval(interval);
       send(JSON.stringify({ type: "project:focus", projectId: null }));
     };
   }, [connected, projectId, send]);
 
   // Send project focus to agent for optimistic tunnels
+  // Re-fires on agent reconnect so tunnels get recreated
   useEffect(() => {
     // Reset toast tracking when project changes
     if (toastedForProject !== projectId) {
@@ -71,7 +77,7 @@ export function useContainerStatus(projectId?: string) {
       }
     }
     sendToAgent(JSON.stringify({ type: "project:focus", projectId: projectId || null }));
-  }, [projectId]);
+  }, [projectId, agentConnected]);
 
   // Toast for newly listening ports (project view only)
   useEffect(() => {

@@ -69,9 +69,14 @@ export function ProjectCard({ project }: { project: Project }) {
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="font-medium text-zinc-100 truncate">{project.name}</h3>
-          <p className="text-xs text-zinc-500 truncate mt-0.5" title={project.directory}>
-            {project.directory}
-          </p>
+          {project.worktreeBranch && (
+            <div className="flex items-center gap-1 mt-0.5">
+              <svg className="w-3 h-3 text-zinc-500 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+                <path fillRule="evenodd" d="M11.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122V6A2.5 2.5 0 0110 8.5H6a1 1 0 00-1 1v1.128a2.251 2.251 0 11-1.5 0V5.372a2.25 2.25 0 111.5 0v1.836A2.492 2.492 0 016 7h4a1 1 0 001-1v-.628A2.25 2.25 0 019.5 3.25zM4.25 12a.75.75 0 100 1.5.75.75 0 000-1.5zM3.5 3.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0z" />
+              </svg>
+              <span className="text-xs text-zinc-500 truncate font-mono">{project.worktreeBranch}</span>
+            </div>
+          )}
           {project.githubRepo && (
             <div className="flex items-center gap-1 mt-1">
               <svg className="w-3 h-3 text-zinc-500" viewBox="0 0 16 16" fill="currentColor">

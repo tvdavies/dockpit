@@ -13,9 +13,9 @@ export interface Project {
 }
 
 export interface CreateProjectInput {
-  name: string;
   sourceRepo: string;
   branch?: string;
+  workspaceId?: string;
 }
 
 export interface UpdateProjectInput {
@@ -24,7 +24,15 @@ export interface UpdateProjectInput {
 }
 
 export interface CreateProjectFromGitHubInput {
-  name: string;
   repo: string;
   branch?: string;
+  workspaceId?: string;
+}
+
+export function generateWorkspaceId(baseName: string): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  let suffix = "";
+  for (const b of bytes) suffix += chars[b % chars.length];
+  return `${baseName}-${suffix}`;
 }
