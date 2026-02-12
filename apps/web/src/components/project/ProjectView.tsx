@@ -5,9 +5,9 @@ import { useProjectStore } from "../../stores/projectStore";
 import { useContainerStatus } from "../../hooks/useContainerStatus";
 import { api } from "../../lib/api";
 import { TerminalPane } from "./TerminalPane";
-import { WebPreviewPane } from "./WebPreviewPane";
 import { GitDiffPanel } from "./GitDiffPanel";
 import { ProjectToolbar } from "./ProjectToolbar";
+import { AgentWarning } from "./AgentWarning";
 import type { Project } from "@dockpit/shared";
 
 export function ProjectView() {
@@ -16,10 +16,9 @@ export function ProjectView() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [showGit, setShowGit] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
   const { updateProject } = useProjectStore();
 
-  useContainerStatus();
+  const { agentConnected, tunnelPorts, disconnectPort, killAgent } = useContainerStatus(id);
 
   // Sync from store
   const storeProject = useProjectStore((s) =>
@@ -61,36 +60,24 @@ export function ProjectView() {
     <div className="h-screen bg-zinc-950 flex flex-col overflow-hidden">
       <ProjectToolbar
         project={project}
-        showPreview={showPreview}
-        onTogglePreview={() => setShowPreview(!showPreview)}
         showGit={showGit}
         onToggleGit={() => setShowGit(!showGit)}
+        agentConnected={agentConnected}
+        tunnelPorts={tunnelPorts}
+        onDisconnectPort={disconnectPort}
+        onKillAgent={killAgent}
       />
+
+      <AgentWarning agentConnected={agentConnected} />
 
       <div className="flex-1 min-h-0">
         <PanelGroup direction="vertical">
           <Panel defaultSize={showGit ? 70 : 100} minSize={30}>
-            <PanelGroup direction="horizontal">
-              {/* Terminal */}
-              <Panel defaultSize={showPreview ? 60 : 100} minSize={30}>
-                <TerminalPane
-                  projectId={project.id}
-                  sessionId={sessionId}
-                  isRunning={isRunning}
-                />
-              </Panel>
-
-              {showPreview && (
-                <>
-                  <PanelResizeHandle className="w-1 bg-zinc-800 hover:bg-blue-500 transition-colors" />
-
-                  {/* Web Preview */}
-                  <Panel defaultSize={40} minSize={20}>
-                    <WebPreviewPane project={project} />
-                  </Panel>
-                </>
-              )}
-            </PanelGroup>
+            <TerminalPane
+              projectId={project.id}
+              sessionId={sessionId}
+              isRunning={isRunning}
+            />
           </Panel>
 
           {showGit && (

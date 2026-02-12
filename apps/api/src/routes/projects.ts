@@ -35,7 +35,9 @@ projectRoutes.post("/", async (c) => {
     if (e instanceof ValidationError) {
       return c.json({ error: e.message }, 400);
     }
-    throw e;
+    const message = e instanceof Error ? e.message : "Failed to create project";
+    console.error("Project creation error:", e);
+    return c.json({ error: message }, 500);
   }
 });
 

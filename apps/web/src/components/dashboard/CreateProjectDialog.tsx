@@ -2,59 +2,44 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useProjectStore } from "../../stores/projectStore";
 import { api } from "../../lib/api";
 import type { GitHubRepo } from "@dockpit/shared";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 interface Props {
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-type Tab = "local" | "github";
-
-export function CreateProjectDialog({ onClose }: Props) {
-  const [tab, setTab] = useState<Tab>("local");
-
+export function CreateProjectDialog({ open, onOpenChange }: Props) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New Project</DialogTitle>
+        </DialogHeader>
 
-      <div className="relative bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <h2 className="text-lg font-semibold text-zinc-100 mb-4">
-          New Project
-        </h2>
-
-        {/* Tabs */}
-        <div className="flex gap-1 mb-4 bg-zinc-950 rounded-lg p-1">
-          <button
-            onClick={() => setTab("local")}
-            className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-              tab === "local"
-                ? "bg-zinc-800 text-zinc-100"
-                : "text-zinc-500 hover:text-zinc-300"
-            }`}
-          >
-            Local Repo
-          </button>
-          <button
-            onClick={() => setTab("github")}
-            className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-              tab === "github"
-                ? "bg-zinc-800 text-zinc-100"
-                : "text-zinc-500 hover:text-zinc-300"
-            }`}
-          >
-            From GitHub
-          </button>
-        </div>
-
-        {tab === "local" ? (
-          <LocalTab onClose={onClose} />
-        ) : (
-          <GitHubTab onClose={onClose} />
-        )}
-      </div>
-    </div>
+        <Tabs defaultValue="local">
+          <TabsList>
+            <TabsTrigger value="local">Local Repo</TabsTrigger>
+            <TabsTrigger value="github">From GitHub</TabsTrigger>
+          </TabsList>
+          <TabsContent value="local">
+            <LocalTab onClose={() => onOpenChange(false)} />
+          </TabsContent>
+          <TabsContent value="github">
+            <GitHubTab onClose={() => onOpenChange(false)} />
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -90,48 +75,41 @@ function LocalTab({ onClose }: { onClose: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm text-zinc-400 mb-1.5">
-          Project Name
-        </label>
-        <input
-          type="text"
+      <div className="space-y-2">
+        <Label htmlFor="project-name">Project Name</Label>
+        <Input
+          id="project-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="my-app"
           autoFocus
-          className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 text-sm"
         />
       </div>
 
-      <div>
-        <label className="block text-sm text-zinc-400 mb-1.5">
-          Source Git Repository
-        </label>
-        <input
-          type="text"
+      <div className="space-y-2">
+        <Label htmlFor="source-repo">Source Git Repository</Label>
+        <Input
+          id="source-repo"
           value={sourceRepo}
           onChange={(e) => setSourceRepo(e.target.value)}
           placeholder="~/dev/my-app"
-          className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 text-sm font-mono"
+          className="font-mono"
         />
-        <p className="text-xs text-zinc-600 mt-1">
+        <p className="text-xs text-zinc-600">
           Path to a local git repo. A worktree will be created from it.
         </p>
       </div>
 
-      <div>
-        <label className="block text-sm text-zinc-400 mb-1.5">
-          Branch Name
-        </label>
-        <input
-          type="text"
+      <div className="space-y-2">
+        <Label htmlFor="branch-name">Branch Name</Label>
+        <Input
+          id="branch-name"
           value={branch}
           onChange={(e) => setBranch(e.target.value)}
           placeholder={name ? `dockpit/${name}` : "dockpit/{project-name}"}
-          className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 text-sm font-mono"
+          className="font-mono"
         />
-        <p className="text-xs text-zinc-600 mt-1">
+        <p className="text-xs text-zinc-600">
           Optional. Defaults to dockpit/{"{project-name}"}
         </p>
       </div>
@@ -143,20 +121,12 @@ function LocalTab({ onClose }: { onClose: () => void }) {
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-300 transition-colors cursor-pointer"
-        >
+        <Button type="button" variant="ghost" onClick={onClose}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
-        >
+        </Button>
+        <Button type="submit" disabled={loading}>
           {loading ? "Creating..." : "Create Project"}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -177,7 +147,6 @@ function GitHubTab({ onClose }: { onClose: () => void }) {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const createProjectFromGitHub = useProjectStore((s) => s.createProjectFromGitHub);
 
-  // Check auth on mount
   useEffect(() => {
     api.github.authStatus().then((status) => {
       setAuthenticated(status.authenticated);
@@ -188,7 +157,6 @@ function GitHubTab({ onClose }: { onClose: () => void }) {
     });
   }, []);
 
-  // Fetch repos when authenticated
   useEffect(() => {
     if (authenticated) {
       fetchRepos();
@@ -264,12 +232,9 @@ function GitHubTab({ onClose }: { onClose: () => void }) {
           Run the command above in your terminal, then try again.
         </p>
         <div className="flex justify-end pt-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-300 transition-colors cursor-pointer"
-          >
+          <Button variant="ghost" onClick={onClose}>
             Close
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -283,19 +248,15 @@ function GitHubTab({ onClose }: { onClose: () => void }) {
         </p>
       )}
 
-      {/* Search */}
       <div>
-        <input
-          type="text"
+        <Input
           value={query}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search repositories..."
           autoFocus
-          className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 text-sm"
         />
       </div>
 
-      {/* Repo list */}
       <div className="max-h-48 overflow-y-auto border border-zinc-800 rounded-lg divide-y divide-zinc-800/50">
         {reposLoading ? (
           <div className="py-6 text-center text-sm text-zinc-500">
@@ -342,33 +303,27 @@ function GitHubTab({ onClose }: { onClose: () => void }) {
         )}
       </div>
 
-      {/* Name and branch fields (shown after selection) */}
       {selectedRepo && (
         <>
-          <div>
-            <label className="block text-sm text-zinc-400 mb-1.5">
-              Project Name
-            </label>
-            <input
-              type="text"
+          <div className="space-y-2">
+            <Label htmlFor="gh-project-name">Project Name</Label>
+            <Input
+              id="gh-project-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 text-sm"
             />
           </div>
 
-          <div>
-            <label className="block text-sm text-zinc-400 mb-1.5">
-              Branch Name
-            </label>
-            <input
-              type="text"
+          <div className="space-y-2">
+            <Label htmlFor="gh-branch-name">Branch Name</Label>
+            <Input
+              id="gh-branch-name"
               value={branch}
               onChange={(e) => setBranch(e.target.value)}
               placeholder={name ? `dockpit/${name}` : "dockpit/{project-name}"}
-              className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 text-sm font-mono"
+              className="font-mono"
             />
-            <p className="text-xs text-zinc-600 mt-1">
+            <p className="text-xs text-zinc-600">
               Optional. Defaults to dockpit/{"{project-name}"}
             </p>
           </div>
@@ -382,20 +337,12 @@ function GitHubTab({ onClose }: { onClose: () => void }) {
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-300 transition-colors cursor-pointer"
-        >
+        <Button type="button" variant="ghost" onClick={onClose}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading || !selectedRepo}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
-        >
+        </Button>
+        <Button type="submit" disabled={loading || !selectedRepo}>
           {loading ? "Creating..." : "Create Project"}
-        </button>
+        </Button>
       </div>
     </form>
   );

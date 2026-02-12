@@ -57,6 +57,7 @@ export function initDb(): void {
   try { db.exec("ALTER TABLE projects ADD COLUMN github_repo TEXT"); } catch {}
   try { db.exec("ALTER TABLE projects ADD COLUMN source_repo TEXT"); } catch {}
   try { db.exec("ALTER TABLE projects ADD COLUMN worktree_branch TEXT"); } catch {}
+  try { db.exec("ALTER TABLE projects ADD COLUMN detected_ports TEXT DEFAULT '[]'"); } catch {}
 
   console.log("Database initialized at", dbPath);
 }

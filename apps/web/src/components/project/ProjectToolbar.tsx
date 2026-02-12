@@ -1,18 +1,22 @@
 import { useNavigate } from "react-router-dom";
-import type { Project } from "@dockpit/shared";
+import type { Project, TunnelPortStatus } from "@dockpit/shared";
 import { useProjectStore } from "../../stores/projectStore";
-import { ContainerStatusBadge } from "../dashboard/ContainerStatusBadge";
+import { TunnelStatus } from "./TunnelStatus";
 import { useState } from "react";
+import { ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   project: Project;
-  showPreview: boolean;
-  onTogglePreview: () => void;
   showGit: boolean;
   onToggleGit: () => void;
+  agentConnected: boolean | null;
+  tunnelPorts: TunnelPortStatus[];
+  onDisconnectPort: (port: number) => void;
+  onKillAgent: () => void;
 }
 
-export function ProjectToolbar({ project, showPreview, onTogglePreview, showGit, onToggleGit }: Props) {
+export function ProjectToolbar({ project, showGit, onToggleGit, agentConnected, tunnelPorts, onDisconnectPort, onKillAgent }: Props) {
   const navigate = useNavigate();
   const { startContainer, stopContainer, restartContainer } = useProjectStore();
   const [actionLoading, setActionLoading] = useState(false);
@@ -32,23 +36,23 @@ export function ProjectToolbar({ project, showPreview, onTogglePreview, showGit,
   };
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2 bg-zinc-900 border-b border-zinc-800">
+    <div className="flex items-center gap-2 px-3 py-2 bg-zinc-900 border-b border-zinc-800">
       {/* Back */}
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => navigate("/")}
-        className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
+        className="h-7 w-7"
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
 
-      {/* Project info */}
+      {/* Project name + status indicators */}
       <div className="flex items-center gap-2 min-w-0">
         <span className="font-medium text-zinc-100 text-sm truncate">
           {project.name}
         </span>
-        <ContainerStatusBadge status={project.containerStatus} />
+        <TunnelStatus agentConnected={agentConnected} tunnelPorts={tunnelPorts} onDisconnectPort={onDisconnectPort} onKillAgent={onKillAgent} />
       </div>
 
       <div className="flex-1" />
@@ -56,57 +60,46 @@ export function ProjectToolbar({ project, showPreview, onTogglePreview, showGit,
       {/* Container actions */}
       <div className="flex items-center gap-1">
         {!isRunning && (
-          <button
+          <Button
+            variant="success"
+            size="sm"
             onClick={() => handleAction(startContainer)}
             disabled={actionLoading}
-            className="px-3 py-1 text-xs font-medium bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
           >
             Start
-          </button>
+          </Button>
         )}
         {isRunning && (
           <>
-            <button
+            <Button
+              variant="warning"
+              size="sm"
               onClick={() => handleAction(restartContainer)}
               disabled={actionLoading}
-              className="px-3 py-1 text-xs font-medium bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
             >
               Restart
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
               onClick={() => handleAction(stopContainer)}
               disabled={actionLoading}
-              className="px-3 py-1 text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
             >
               Stop
-            </button>
+            </Button>
           </>
         )}
       </div>
 
-      {/* Preview toggle */}
-      <button
-        onClick={onTogglePreview}
-        className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
-          showPreview
-            ? "bg-blue-500/20 text-blue-400"
-            : "bg-zinc-800 text-zinc-400 hover:text-zinc-300"
-        }`}
-      >
-        Preview
-      </button>
-
       {/* Git toggle */}
-      <button
+      <Button
+        variant={showGit ? "default" : "secondary"}
+        size="sm"
         onClick={onToggleGit}
-        className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
-          showGit
-            ? "bg-blue-500/20 text-blue-400"
-            : "bg-zinc-800 text-zinc-400 hover:text-zinc-300"
-        }`}
+        className={showGit ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30" : ""}
       >
         Git
-      </button>
+      </Button>
     </div>
   );
 }

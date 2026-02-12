@@ -1,24 +1,27 @@
-const statusConfig: Record<string, { color: string; label: string }> = {
-  running: { color: "bg-emerald-400", label: "Running" },
-  exited: { color: "bg-zinc-500", label: "Stopped" },
-  created: { color: "bg-yellow-400", label: "Created" },
-  paused: { color: "bg-yellow-400", label: "Paused" },
-  restarting: { color: "bg-yellow-400", label: "Restarting" },
-  removing: { color: "bg-red-400", label: "Removing" },
-  dead: { color: "bg-red-400", label: "Dead" },
-  not_created: { color: "bg-zinc-600", label: "Not created" },
+import { Badge } from "@/components/ui/badge";
+
+const statusConfig: Record<string, { variant: "success" | "secondary" | "warning" | "destructive" | "outline"; label: string; dotColor: string }> = {
+  running: { variant: "success", label: "Running", dotColor: "bg-emerald-400" },
+  exited: { variant: "secondary", label: "Stopped", dotColor: "bg-zinc-500" },
+  created: { variant: "warning", label: "Created", dotColor: "bg-yellow-400" },
+  paused: { variant: "warning", label: "Paused", dotColor: "bg-yellow-400" },
+  restarting: { variant: "warning", label: "Restarting", dotColor: "bg-yellow-400" },
+  removing: { variant: "destructive", label: "Removing", dotColor: "bg-red-400" },
+  dead: { variant: "destructive", label: "Dead", dotColor: "bg-red-400" },
+  not_created: { variant: "outline", label: "Not created", dotColor: "bg-zinc-600" },
 };
 
 export function ContainerStatusBadge({ status }: { status: string }) {
   const config = statusConfig[status] || {
-    color: "bg-zinc-600",
+    variant: "outline" as const,
     label: status,
+    dotColor: "bg-zinc-600",
   };
 
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-zinc-400">
-      <span className={`w-1.5 h-1.5 rounded-full ${config.color}`} />
+    <Badge variant={config.variant} className="gap-1.5 border-0">
+      <span className={`w-1.5 h-1.5 rounded-full ${config.dotColor}`} />
       {config.label}
-    </span>
+    </Badge>
   );
 }

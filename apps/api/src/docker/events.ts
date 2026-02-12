@@ -1,6 +1,7 @@
 import { getDocker } from "./client";
 import { getDb } from "../db/schema";
 import { broadcastEvent } from "../ws/events";
+import { onContainerStarted, onContainerStopped } from "../services/tunnel";
 
 let eventStream: NodeJS.ReadableStream | null = null;
 
@@ -70,6 +71,13 @@ function handleDockerEvent(event: any): void {
     status,
     containerId: event.Actor?.ID || "",
   });
+
+  // Notify tunnel manager about container lifecycle changes
+  if (status === "running") {
+    onContainerStarted(projectId);
+  } else if (status === "exited" || status === "not_created") {
+    onContainerStopped(projectId);
+  }
 }
 
 function mapEventToStatus(action: string): string | null {

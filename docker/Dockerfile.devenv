@@ -2,21 +2,27 @@ FROM archlinux:latest
 
 RUN pacman -Syu --noconfirm && pacman -S --noconfirm \
     fish tmux git curl vim nodejs npm unzip \
-    procps-ng iproute2 github-cli starship openssh \
+    procps-ng iproute2 github-cli starship openssh sudo docker \
     && pacman -Scc --noconfirm
+
+# Create non-root user
+RUN useradd -m -s /usr/bin/fish -G wheel,docker dev && \
+    echo "dev ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Switch to non-root user for user-level installs
+USER dev
+WORKDIR /home/dev
 
 # Bun
 RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:$PATH"
+ENV PATH="/home/dev/.bun/bin:$PATH"
 
-# Claude CLI
-RUN npm install -g @anthropic-ai/claude-code
+# Claude Code (native install)
+RUN curl -fsSL https://claude.ai/install.sh | bash
+ENV PATH="/home/dev/.local/bin:$PATH"
 
 # Fisher + nvm.fish
 RUN fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher && fisher install jorgebucaran/nvm.fish"
-
-# Default shell
-RUN chsh -s /usr/bin/fish root
 
 WORKDIR /workspace
 CMD ["sleep", "infinity"]

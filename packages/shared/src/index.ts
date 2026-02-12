@@ -10,6 +10,11 @@ export type {
   WsTerminalResize,
   WsContainerEvent,
   WsLogPreview,
+  WsProjectFocus,
+  WsAgentStatus,
+  WsAgentStatusRequest,
+  WsTunnelStatus,
+  TunnelPortStatus,
   WsPing,
   WsPong,
 } from "./ws";

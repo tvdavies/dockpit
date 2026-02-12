@@ -140,6 +140,18 @@ function rowToProject(row: any): Project {
   };
 }
 
+export function getDetectedPorts(projectId: string): number[] {
+  const db = getDb();
+  const row = db.query("SELECT detected_ports FROM projects WHERE id = ?").get(projectId) as any;
+  if (!row?.detected_ports) return [];
+  try { return JSON.parse(row.detected_ports); } catch { return []; }
+}
+
+export function setDetectedPorts(projectId: string, ports: number[]): void {
+  const db = getDb();
+  db.run("UPDATE projects SET detected_ports = ? WHERE id = ?", [JSON.stringify(ports), projectId]);
+}
+
 export class ValidationError extends Error {
   constructor(message: string) {
     super(message);

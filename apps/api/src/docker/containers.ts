@@ -2,6 +2,7 @@ import type Docker from "dockerode";
 import { getDocker, NETWORK_NAME } from "./client";
 import { getDb } from "../db/schema";
 import { homedir } from "os";
+import { resolve } from "path";
 import type { ContainerInfo, ContainerStatus } from "@dockpit/shared";
 
 const IMAGE_NAME = "dockpit-devenv:latest";
@@ -15,7 +16,7 @@ export async function ensureImage(): Promise<void> {
     console.log("Building dockpit-devenv image...");
     const proc = Bun.spawn(
       ["docker", "build", "-t", IMAGE_NAME, "-f", "Dockerfile.devenv", "."],
-      { cwd: "/home/tvd/dev/dockpit/docker", stdout: "pipe", stderr: "pipe" }
+      { cwd: resolve(import.meta.dir, "../../../../docker"), stdout: "pipe", stderr: "pipe" }
     );
     const stderr = await new Response(proc.stderr).text();
     const exitCode = await proc.exited;
@@ -53,14 +54,16 @@ export async function createAndStartContainer(
     },
     Tty: true,
     OpenStdin: true,
-    Cmd: ["sleep", "infinity"],
+    Cmd: ["sh", "-c", "sudo chown -R dev:dev /workspace && exec sleep infinity"],
     HostConfig: {
       Binds: [
         `${directory}:/workspace:rw`,
-        `${homedir()}/.config/fish/:/root/.config/fish/:rw`,
-        `${homedir()}/.config/gh/:/root/.config/gh/:rw`,
-        `${homedir()}/.claude/:/root/.claude/:rw`,
-        `${homedir()}/.tmux.conf:/root/.tmux.conf:rw`,
+        `${homedir()}/.config/fish/:/home/dev/.config/fish/:rw`,
+        `${homedir()}/.config/gh/:/home/dev/.config/gh/:rw`,
+        `${homedir()}/.claude/:/home/dev/.claude/:rw`,
+        `${homedir()}/.claude.json:/home/dev/.claude.json:rw`,
+        `${homedir()}/.tmux.conf:/home/dev/.tmux.conf:rw`,
+        `/var/run/docker.sock:/var/run/docker.sock:rw`,
       ],
       NetworkMode: NETWORK_NAME,
     },

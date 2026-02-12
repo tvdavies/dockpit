@@ -3,10 +3,12 @@ import { useProjects } from "../../hooks/useProjects";
 import { useContainerStatus } from "../../hooks/useContainerStatus";
 import { ProjectCard } from "./ProjectCard";
 import { CreateProjectDialog } from "./CreateProjectDialog";
+import { ConnectionStatus } from "./ConnectionStatus";
+import { Button } from "@/components/ui/button";
 
 export function Dashboard() {
   const { projects, loading, error } = useProjects();
-  const { connected } = useContainerStatus();
+  const { connected, agentConnected, tunnelPorts, disconnectPort, killAgent } = useContainerStatus();
   const [showCreate, setShowCreate] = useState(false);
 
   return (
@@ -31,27 +33,17 @@ export function Dashboard() {
               </svg>
             </div>
             <h1 className="text-xl font-semibold text-zinc-100">Dockpit</h1>
-            <span
-              className={`ml-2 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
-                connected
-                  ? "bg-emerald-500/10 text-emerald-400"
-                  : "bg-zinc-800 text-zinc-500"
-              }`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  connected ? "bg-emerald-400" : "bg-zinc-500"
-                }`}
-              />
-              {connected ? "Live" : "Connecting"}
-            </span>
+            <ConnectionStatus
+              apiConnected={connected}
+              agentConnected={agentConnected}
+              tunnelPorts={tunnelPorts}
+              onDisconnectPort={disconnectPort}
+              onKillAgent={killAgent}
+            />
           </div>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
-          >
+          <Button onClick={() => setShowCreate(true)}>
             New Project
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -98,12 +90,9 @@ export function Dashboard() {
               Create your first project to get started with isolated dev
               environments.
             </p>
-            <button
-              onClick={() => setShowCreate(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
-            >
+            <Button onClick={() => setShowCreate(true)}>
               Create Project
-            </button>
+            </Button>
           </div>
         )}
 
@@ -116,9 +105,7 @@ export function Dashboard() {
         )}
       </main>
 
-      {showCreate && (
-        <CreateProjectDialog onClose={() => setShowCreate(false)} />
-      )}
+      <CreateProjectDialog open={showCreate} onOpenChange={setShowCreate} />
     </div>
   );
 }

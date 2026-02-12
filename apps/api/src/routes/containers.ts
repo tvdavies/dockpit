@@ -8,6 +8,7 @@ import {
   getTerminalPreview,
 } from "../docker/containers";
 import { destroyProjectSessions } from "../services/terminal";
+import { getPreviewPort, stopPreviewProxy } from "../services/preview-proxy";
 
 export const containerRoutes = new Hono();
 
@@ -40,6 +41,7 @@ containerRoutes.post("/:id/stop", async (c) => {
 
   try {
     destroyProjectSessions(id);
+    stopPreviewProxy(id);
     await stopContainer(id);
     const updated = getProject(id)!;
     return c.json({ data: updated });
@@ -60,6 +62,19 @@ containerRoutes.post("/:id/restart", async (c) => {
     return c.json({ data: updated });
   } catch (e: any) {
     return c.json({ error: e.message || "Failed to restart container" }, 500);
+  }
+});
+
+containerRoutes.get("/:id/preview-url", async (c) => {
+  const id = c.req.param("id");
+  const project = getProject(id);
+  if (!project) return c.json({ error: "Project not found" }, 404);
+
+  try {
+    const port = await getPreviewPort(id);
+    return c.json({ data: { port } });
+  } catch (e: any) {
+    return c.json({ error: e.message || "Failed to get preview URL" }, 500);
   }
 });
 
